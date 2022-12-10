@@ -30,7 +30,7 @@ public enum DOAlertControllerStyle : Int {
 open class DOAlertAction : NSObject, NSCopying {
     open var title: String
     open var style: DOAlertActionStyle
-    var handler: ((DOAlertAction?) -> Void)!
+    var handler: ((DOAlertAction) -> Void)?
     open var enabled: Bool {
         didSet {
             if (oldValue != enabled) {
@@ -39,7 +39,7 @@ open class DOAlertAction : NSObject, NSCopying {
         }
     }
     
-    required public init(title: String, style: DOAlertActionStyle, handler: ((DOAlertAction?) -> Void)!) {
+    required public init(title: String, style: DOAlertActionStyle, handler: ((DOAlertAction) -> Void)? = nil) {
         self.title = title
         self.style = style
         self.handler = handler
@@ -95,26 +95,26 @@ open class DOAlertAnimation : NSObject, UIViewControllerAnimatedTransitioning {
         containerView.addSubview(alertController.view)
         
         UIView.animate(withDuration: 0.25,
-                                   animations: {
-                                    alertController.overlayView.alpha = 1.0
-                                    if (alertController.isAlert()) {
-                                        alertController.alertView.alpha = 1.0
-                                        alertController.alertView.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
-                                    } else {
-                                        let bounce = alertController.alertView.frame.height / 480 * 10.0 + 10.0
-                                        alertController.alertView.transform = CGAffineTransform(translationX: 0, y: -bounce)
-                                    }
+                       animations: {
+            alertController.overlayView.alpha = 1.0
+            if (alertController.isAlert()) {
+                alertController.alertView.alpha = 1.0
+                alertController.alertView.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
+            } else {
+                let bounce = alertController.alertView.frame.height / 480 * 10.0 + 10.0
+                alertController.alertView.transform = CGAffineTransform(translationX: 0, y: -bounce)
+            }
         },
-                                   completion: { finished in
-                                    UIView.animate(withDuration: 0.2,
-                                                               animations: {
-                                                                alertController.alertView.transform = CGAffineTransform.identity
-                                    },
-                                                               completion: { finished in
-                                                                if (finished) {
-                                                                    transitionContext.completeTransition(true)
-                                                                }
-                                    })
+                       completion: { finished in
+            UIView.animate(withDuration: 0.2,
+                           animations: {
+                alertController.alertView.transform = CGAffineTransform.identity
+            },
+                           completion: { finished in
+                if (finished) {
+                    transitionContext.completeTransition(true)
+                }
+            })
         })
     }
     
@@ -123,17 +123,17 @@ open class DOAlertAnimation : NSObject, UIViewControllerAnimatedTransitioning {
         let alertController = transitionContext.viewController(forKey: UITransitionContextViewControllerKey.from) as! DOAlertController
         
         UIView.animate(withDuration: self.transitionDuration(using: transitionContext),
-                                   animations: {
-                                    alertController.overlayView.alpha = 0.0
-                                    if (alertController.isAlert()) {
-                                        alertController.alertView.alpha = 0.0
-                                        alertController.alertView.transform = CGAffineTransform(scaleX: 0.9, y: 0.9)
-                                    } else {
-                                        alertController.containerView.transform = CGAffineTransform(translationX: 0, y: alertController.alertView.frame.height)
-                                    }
+                       animations: {
+            alertController.overlayView.alpha = 0.0
+            if (alertController.isAlert()) {
+                alertController.alertView.alpha = 0.0
+                alertController.alertView.transform = CGAffineTransform(scaleX: 0.9, y: 0.9)
+            } else {
+                alertController.containerView.transform = CGAffineTransform(translationX: 0, y: alertController.alertView.frame.height)
+            }
         },
-                                   completion: { finished in
-                                    transitionContext.completeTransition(true)
+                       completion: { finished in
+            transitionContext.completeTransition(true)
         })
     }
 }
@@ -630,9 +630,7 @@ open class DOAlertController : UIViewController, UITextFieldDelegate, UIViewCont
     @objc func buttonTapped(_ sender: UIButton) {
         sender.isSelected = true
         let action = actions[sender.tag - 1] as! DOAlertAction
-        if (action.handler != nil) {
-            action.handler(action)
-        }
+        action.handler?(action)
         self.dismiss(animated: true, completion: nil)
     }
     
@@ -640,9 +638,7 @@ open class DOAlertController : UIViewController, UITextFieldDelegate, UIViewCont
     @objc func handleContainerViewTapGesture(_ sender: AnyObject) {
         // cancel action
         let action = actions[cancelButtonTag - 1] as! DOAlertAction
-        if (action.handler != nil) {
-            action.handler(action)
-        }
+        action.handler?(action)
         self.dismiss(animated: true, completion: nil)
     }
     
@@ -701,9 +697,7 @@ open class DOAlertController : UIViewController, UITextFieldDelegate, UIViewCont
         if (action.style == DOAlertActionStyle.cancel) {
             for ac in actions as! [DOAlertAction] {
                 if (ac.style == DOAlertActionStyle.cancel) {
-                    let error: NSError? = nil
-                    NSException.raise(NSExceptionName(rawValue: "NSInternalInconsistencyException"), format:"DOAlertController can only have one action with a style of DOAlertActionStyleCancel", arguments:getVaList([error ?? "nil"]))
-                    return
+                    fatalError("DOAlertController can only have one action with a style of DOAlertActionStyleCancel")
                 }
             }
         }
@@ -727,9 +721,7 @@ open class DOAlertController : UIViewController, UITextFieldDelegate, UIViewCont
         
         // You can add a text field only if the preferredStyle property is set to DOAlertControllerStyle.Alert.
         if (!isAlert()) {
-            let error: NSError? = nil
-            NSException.raise(NSExceptionName(rawValue: "NSInternalInconsistencyException"), format: "Text fields can only be added to an alert controller of style DOAlertControllerStyleAlert", arguments:getVaList([error ?? "nil"]))
-            return
+            fatalError("Text fields can only be added to an alert controller of style DOAlertControllerStyleAlert")
         }
         if (textFields == nil) {
             textFields = []

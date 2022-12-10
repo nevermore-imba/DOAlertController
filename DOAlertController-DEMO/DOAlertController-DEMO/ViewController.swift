@@ -404,7 +404,9 @@ class ViewController : UITableViewController, UITextFieldDelegate {
         if (textField === textField1) {
             self.textField2?.becomeFirstResponder()
         } else if (textField === textField2) {
-            customAlertAction!.handler(customAlertAction)
+            if let action = customAlertAction {
+                action.handler?(action)
+            }
             self.textField2?.resignFirstResponder()
             self.customAlertController.dismiss(animated: true, completion: nil)
         }
